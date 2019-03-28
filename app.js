@@ -31,11 +31,12 @@ let DATA = {
       [3, 4, 5],
       [6, 7, 8],
       [0, 3, 6],
-      [1, 4, 5],
-      [6, 7, 8],
+      [1, 4, 7],
+      [2, 5, 8],
       [0, 4, 8],
-      [2, 4, 6],
+   [6, 4, 2]
    ],
+   hardMode: false,   
    player: CROSS,
    computer: CIRCLE
 };
@@ -58,6 +59,14 @@ let VIEW = {
       result.classList.add("result-active");
       resultMessage.innerHTML = message;
    },
+   resetView(){
+      let result = document.querySelector(".result");
+      result.classList.remove("result-active");
+      let cells = document.querySelectorAll(".cross-circle");
+      for(let i = 0; i < cells.length; i++){
+         cells[i].remove();
+      }
+   }
 };
 
 //=====================================MODIFIER================================
@@ -71,19 +80,22 @@ let MODIFIER = {
          VIEW.placeMark(target, "player");
          DATA.boardCells[index] = "CROSS";
 
-         if (this.checkWin("CROSS")) { // if there is a winning combination
+         if (this.checkWin("CROSS")) { // if there is a winning combination for player
             VIEW.displayEndGame("YOU WIN!");
             DATA.boardCells = DATA.boardCells.map(x => x = "PLAYER")
             return;
          };
 
-         let aiMove = this.choosePos();
-         if (aiMove === null) {
+         let aiMove = this.choosePos(); //choose position of computer move
+         if (aiMove === null) { //if there is no spot for computer to place
             VIEW.displayEndGame("IT'S A TIE");
-         } else {
+         } 
+         else { // else place circle mark
             VIEW.placeMark(VIEW.getTarget(aiMove), "computer")
             DATA.boardCells[aiMove] = "CIRCLE";
-            if (this.checkWin("CIRCLE")) { // if there is a winning combination
+
+
+            if (this.checkWin("CIRCLE")) { // if there is a winning combination for computer
                VIEW.displayEndGame("YOU LOSE!");
                DATA.boardCells = DATA.boardCells.map(x => x = "COMPUTER")
                return;
@@ -97,17 +109,24 @@ let MODIFIER = {
       return DATA.boardCells[index] !== "" ? false : true;
    },
 
-   //for now chooses a random position available in the array
+   //creates an array of indexes of empty spaces and calls position selector depending on the mode
    choosePos() {
       let emptyCells = []
       for (let i = 0; i < DATA.boardCells.length; i++) {
          if (DATA.boardCells[i] === "") emptyCells.push(i);
       }
+      return DATA.hardMode ? this.hardPosition(emptyCells) : this.easyPosition(emptyCells);
+   },
+
+   easyPosition(emptyCells){
       let random = Math.floor(Math.random() * (emptyCells.length - 1));
       return emptyCells.length <= 0 ? null : emptyCells[random];
    },
+   hardPosition(emptyCells){
+      if(emptyCells.length <= 0) return null;
 
-
+   },
+   //checks if any of the winning combinations exist in the board array
    checkWin(who) {
       for (let i = 0; i < DATA.winComb.length; i++) {
          let currArr = DATA.winComb[i];
@@ -116,13 +135,20 @@ let MODIFIER = {
       }
       return false;
    },
+   //resets the entire board
+   resetPanel(){
+      DATA.boardCells = ["","","","","","","","",""];
+      VIEW.resetView();
+   },
+   changeGameMode(mode){
+      mode === "easy" ? DATA.hardMode = false : DATA.hardMode = true;
+   }
 }
 
 //=====================================DOM EVENTS==============================
-// document.getElementById("main-game").addEventListener("click", function (event) {
-//    MODIFIER.startTurn(event.target);
-// });
 
 document.getElementById("main-game").addEventListener("click", MODIFIER.startTurn.bind(MODIFIER) );
-
+document.getElementById("reset").addEventListener("click", MODIFIER.resetPanel.bind(MODIFIER) );
+document.getElementById("easy-mode").addEventListener("click", () =>  MODIFIER.changeGameMode("easy") );
+document.getElementById("hard-mode").addEventListener("click", () =>  MODIFIER.changeGameMode("hard") );
 //=================================================
