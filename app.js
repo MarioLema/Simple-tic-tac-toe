@@ -1,4 +1,4 @@
-const CROSS = `<svg version="1.1" id="Capa_2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+const CROSS = `<svg version="1.1" id="Capa_2" class="cross-circle" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 viewBox="0 0 47.971 47.971" style="enable-background:new 0 0 47.971 47.971;" xml:space="preserve">
 <g>
 <path d="M28.228,23.986L47.092,5.122c1.172-1.171,1.172-3.071,0-4.242c-1.172-1.172-3.07-1.172-4.242,0L23.986,19.744L5.121,0.88
@@ -7,7 +7,7 @@ viewBox="0 0 47.971 47.971" style="enable-background:new 0 0 47.971 47.971;" xml
    s1.535-0.293,2.121-0.879c1.172-1.171,1.172-3.071,0-4.242L28.228,23.986z"/>
 </g>
 </svg>`;
-const CIRCLE = `<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+const CIRCLE = `<svg version="1.1" id="Capa_1" class="cross-circle" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 width="438.533px" height="438.533px" viewBox="0 0 438.533 438.533" style="enable-background:new 0 0 438.533 438.533;"
 xml:space="preserve">
 <g>
@@ -25,7 +25,7 @@ xml:space="preserve">
 //=====================================DATA HOLDER================================
 
 let DATA = {
-   boardCells: [-1, -1, -1, -1, -1, -1, -1, -1, -1],
+   boardCells: ["", "", "", "", "", "", "", "", ""],
    winComb: [
       [0, 1, 2],
       [3, 4, 5],
@@ -45,36 +45,84 @@ let DATA = {
 let VIEW = {
    placeMark(target, who) {
       target.innerHTML = DATA[who];
-   }
+   },
+
+   getTarget(index) {
+      let targetId = `local-${index + 1}`;
+      return document.getElementById(targetId);
+   },
+
+   displayEndGame(message) {
+      let result = document.querySelector(".result");
+      let resultMessage = document.querySelector(".result-message");
+      result.classList.add("result-active");
+      resultMessage.innerHTML = message;
+   },
 };
 
 //=====================================MODIFIER================================
 let MODIFIER = {
    //manages the turn turn
-   startTurn(target) {
+   startTurn(event) {
+      let target = event.target;
       let index = target.id[6] - 1;
-      if (this.checkPos(index)) {
-         VIEW.placeMark(target, "player")
-         DATA.boardCells[index]++;
+      if (this.checkPos(index)) { //if space (array index) clicked is free
+
+         VIEW.placeMark(target, "player");
+         DATA.boardCells[index] = "CROSS";
+
+         if (this.checkWin("CROSS")) { // if there is a winning combination
+            VIEW.displayEndGame("YOU WIN!");
+            DATA.boardCells = DATA.boardCells.map(x => x = "PLAYER")
+            return;
+         };
+
+         let aiMove = this.choosePos();
+         if (aiMove === null) {
+            VIEW.displayEndGame("IT'S A TIE");
+         } else {
+            VIEW.placeMark(VIEW.getTarget(aiMove), "computer")
+            DATA.boardCells[aiMove] = "CIRCLE";
+            if (this.checkWin("CIRCLE")) { // if there is a winning combination
+               VIEW.displayEndGame("YOU LOSE!");
+               DATA.boardCells = DATA.boardCells.map(x => x = "COMPUTER")
+               return;
+            };
+         }
       };
-      this.checkWin();
-      let aiMove = this.choosePos();
+
    },
    //checks if box is already filled
    checkPos(index) {
-      return DATA.boardCells[index] > -1 ? false : true;
+      return DATA.boardCells[index] !== "" ? false : true;
    },
 
-   choosePos() {},
+   //for now chooses a random position available in the array
+   choosePos() {
+      let emptyCells = []
+      for (let i = 0; i < DATA.boardCells.length; i++) {
+         if (DATA.boardCells[i] === "") emptyCells.push(i);
+      }
+      let random = Math.floor(Math.random() * (emptyCells.length - 1));
+      return emptyCells.length <= 0 ? null : emptyCells[random];
+   },
 
 
-   checkWin() {},
+   checkWin(who) {
+      for (let i = 0; i < DATA.winComb.length; i++) {
+         let currArr = DATA.winComb[i];
+         let board = DATA.boardCells;
+         if (board[currArr[0]] === who && board[currArr[1]] === who && board[currArr[2]] === who) return true;
+      }
+      return false;
+   },
 }
 
-//=====================================DOM EVENTS================================
-document.getElementById("main-game").addEventListener("click", function (event) {
-   MODIFIER.startTurn(event.target);
-});
+//=====================================DOM EVENTS==============================
+// document.getElementById("main-game").addEventListener("click", function (event) {
+//    MODIFIER.startTurn(event.target);
+// });
 
+document.getElementById("main-game").addEventListener("click", MODIFIER.startTurn.bind(MODIFIER) );
 
 //=================================================
