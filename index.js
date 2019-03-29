@@ -74,18 +74,12 @@ let VIEW = {
 
 
 //=====================================MODIFIER================================
-const cells = document.querySelectorAll('.local-game');
+const cells = document.getElementById("main-game");
 startGame();
 
 function startGame() {
-	// document.querySelector(".result").style.display = "none";
 	clearGame();
-
-
-	for (var i = 0; i < cells.length; i++) {
-		cells[i].addEventListener('click', turnClick, false);
-	}
-
+	cells.addEventListener('click', turnClick, false);
 }
 
 function clearGame() {
@@ -95,6 +89,7 @@ function clearGame() {
 
 
 function turnClick(event) {
+	console.log(event.target);
 	if (typeof DATA.boardCells[event.target.id] === 'number') {
 		turn(event.target.id, DATA.human)
 		if (!checkWin(DATA.boardCells, DATA.human) && !checkTie()) turn(bestSpot(), DATA.ai);
@@ -120,10 +115,7 @@ function checkWin(board, player) {
 }
 
 function gameOver(gameWon) {
-
-	for (var i = 0; i < cells.length; i++) {
-		cells[i].removeEventListener('click', turnClick, false);
-	}
+		cells.removeEventListener('click', turnClick, false);
 	let winner = gameWon.player === DATA.human ? "YOU WIN!" : gameWon.player === DATA.ai ? "YOU LOSE!" : "IT'S A TIE!";
 	VIEW.displayEndGame(winner);
 }
@@ -142,9 +134,7 @@ function bestSpot() {
 
 function checkTie() {
 	if (emptySquares().length === 0) {
-		for (var i = 0; i < cells.length; i++) {
-			cells[i].removeEventListener('click', turnClick, false);
-		}
+		cells.removeEventListener('click', turnClick, false);
 		VIEW.displayEndGame("IT'S A TIE");
 		return true;
 	}
