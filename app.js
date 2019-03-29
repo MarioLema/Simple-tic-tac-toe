@@ -34,9 +34,9 @@ let DATA = {
       [1, 4, 7],
       [2, 5, 8],
       [0, 4, 8],
-   [6, 4, 2]
+      [6, 4, 2]
    ],
-   hardMode: false,   
+   hardMode: false,
    player: CROSS,
    computer: CIRCLE
 };
@@ -59,11 +59,11 @@ let VIEW = {
       result.classList.add("result-active");
       resultMessage.innerHTML = message;
    },
-   resetView(){
+   resetView() {
       let result = document.querySelector(".result");
       result.classList.remove("result-active");
       let cells = document.querySelectorAll(".cross-circle");
-      for(let i = 0; i < cells.length; i++){
+      for (let i = 0; i < cells.length; i++) {
          cells[i].remove();
       }
    }
@@ -71,31 +71,32 @@ let VIEW = {
 
 //=====================================MODIFIER================================
 let MODIFIER = {
-   //manages the turn turn
+
+   //MANAGES EACH TURN
    startTurn(event) {
       let target = event.target;
       let index = target.id[6] - 1;
-      if (this.checkPos(index)) { //if space (array index) clicked is free
+      if (this.checkPos(index)) { //IF THE SPACE CLICKED IS FREE
 
-         VIEW.placeMark(target, "player");
+         VIEW.placeMark(target, "player"); //PLACE MARKER BOTH IN DOM AND BOARD ARRAY
          DATA.boardCells[index] = "CROSS";
 
-         if (this.checkWin("CROSS")) { // if there is a winning combination for player
+         if (this.checkWin("CROSS", DATA.boardCells)) { // PERFORMS A WIN CHECK FOR PLAYER
             VIEW.displayEndGame("YOU WIN!");
             DATA.boardCells = DATA.boardCells.map(x => x = "PLAYER")
             return;
          };
 
-         let aiMove = this.choosePos(); //choose position of computer move
-         if (aiMove === null) { //if there is no spot for computer to place
+         let aiMove = this.choosePos(); //CHOOSES A POSITION FOR AI MOVE
+         if (aiMove === null) { //IF NO POSITION AVAILABLE, IT IS A TIE
             VIEW.displayEndGame("IT'S A TIE");
-         } 
-         else { // else place circle mark
+            return
+         } else { // ELSE MOVE AI MARKER INTO POSITION
             VIEW.placeMark(VIEW.getTarget(aiMove), "computer")
             DATA.boardCells[aiMove] = "CIRCLE";
 
 
-            if (this.checkWin("CIRCLE")) { // if there is a winning combination for computer
+            if (this.checkWin("CIRCLE", DATA.boardCells)) { //PERFORM A WIN CHECK FOR THE AI
                VIEW.displayEndGame("YOU LOSE!");
                DATA.boardCells = DATA.boardCells.map(x => x = "COMPUTER")
                return;
@@ -104,51 +105,213 @@ let MODIFIER = {
       };
 
    },
-   //checks if box is already filled
+
+
+   //CHECKS IF A POSITION IS ALREADY FILLED
    checkPos(index) {
-      return DATA.boardCells[index] !== "" ? false : true;
+      return DATA.boardCells[index] === "" ? true : false;
    },
 
-   //creates an array of indexes of empty spaces and calls position selector depending on the mode
+
+
+   //CALLS FOR A DIFFERENT FUNCTION TO CHOOSE A POSITION FOR AI
    choosePos() {
+      return DATA.hardMode ? this.hardPosition(DATA.boardCells) : this.easyPosition();
+   },
+
+   //FINDS A RANDOM INDEX OF AN EMPTY CELL
+   easyPosition() {
       let emptyCells = []
       for (let i = 0; i < DATA.boardCells.length; i++) {
          if (DATA.boardCells[i] === "") emptyCells.push(i);
       }
-      return DATA.hardMode ? this.hardPosition(emptyCells) : this.easyPosition(emptyCells);
-   },
-
-   easyPosition(emptyCells){
       let random = Math.floor(Math.random() * (emptyCells.length - 1));
       return emptyCells.length <= 0 ? null : emptyCells[random];
    },
-   hardPosition(emptyCells){
-      if(emptyCells.length <= 0) return null;
+
+
+   //MIN MAX ALGORITHM
+   hardPosition(emptyCells) {
+      if (emptyCells.length <= 0) return null;
 
    },
-   //checks if any of the winning combinations exist in the board array
-   checkWin(who) {
+
+
+   //CHEKS FOR A WINNING COMBINATION ON THE BOARD PASSED
+   checkWin(player, board) {
       for (let i = 0; i < DATA.winComb.length; i++) {
          let currArr = DATA.winComb[i];
-         let board = DATA.boardCells;
-         if (board[currArr[0]] === who && board[currArr[1]] === who && board[currArr[2]] === who) return true;
+         if (board[currArr[0]] === player && board[currArr[1]] === player && board[currArr[2]] === player) return true;
       }
       return false;
    },
-   //resets the entire board
-   resetPanel(){
-      DATA.boardCells = ["","","","","","","","",""];
+
+
+   //RESETS THE BOARD AND THE VIEW
+   resetPanel() {
+      DATA.boardCells = ["", "", "", "", "", "", "", "", ""];
       VIEW.resetView();
    },
-   changeGameMode(mode){
+
+
+   //CHANGES THE GAME MODE 
+   changeGameMode(mode) {
       mode === "easy" ? DATA.hardMode = false : DATA.hardMode = true;
    }
 }
 
 //=====================================DOM EVENTS==============================
 
-document.getElementById("main-game").addEventListener("click", MODIFIER.startTurn.bind(MODIFIER) );
-document.getElementById("reset").addEventListener("click", MODIFIER.resetPanel.bind(MODIFIER) );
-document.getElementById("easy-mode").addEventListener("click", () =>  MODIFIER.changeGameMode("easy") );
-document.getElementById("hard-mode").addEventListener("click", () =>  MODIFIER.changeGameMode("hard") );
+document.getElementById("main-game").addEventListener("click", MODIFIER.startTurn.bind(MODIFIER));
+document.getElementById("reset").addEventListener("click", MODIFIER.resetPanel.bind(MODIFIER));
+document.getElementById("easy-mode").addEventListener("click", () => MODIFIER.changeGameMode("easy"));
+document.getElementById("hard-mode").addEventListener("click", () => MODIFIER.changeGameMode("hard"));
 //=================================================
+
+
+
+
+/*
+lets visualize the above game state
+                                   O |   | X
+                                   ---------
+                                   X |   | X
+                                   ---------
+                                     | O | O
+                             //       ||        \\
+                O | X | X          O |   | X        O |   | X
+                ---------          ---------        ---------
+                X |   | X          X | X | X        X |   | X
+                ---------          ---------        ---------
+                  | O | O            | O | O        X | O | O
+              //          \\                     //          \\
+        O | X | X          O | X | X        O | O | X       O |   | X
+        ---------          ---------        ---------       ---------
+        X | O | X          X |   | X        X |   | X       X | O | X
+        ---------          ---------        ---------       ---------
+          | O | O          O | O | O        X | O | O       X | O | O
+                                        //
+                                   O | O | X
+                                   ---------
+                                   X | X | X
+                                   ---------
+                                   O | O | O
+*/
+// human
+var huPlayer = "O";
+// ai
+var aiPlayer = "X";
+
+// this is the board flattened and filled with some values to easier asses the Artificial Inteligence.
+var origBoard = ["O", 1, "X", "X", 4, "X", 6, "O", "O"];
+//var origBoard = [0,1 ,2,3,4 ,5, 6 ,7,8];
+
+//keeps count of function calls
+var fc = 0;
+
+// finding the ultimate play on the game that favors the computer
+var bestSpot = minimax(origBoard, aiPlayer);
+
+//loging the results
+console.log("index: " + bestSpot.index);
+console.log("function calls: " + fc);
+
+// the main minimax function
+function minimax(newBoard, player) {
+   //add one to function calls
+   fc++;
+
+   //available spots
+   var availSpots = emptyIndexies(newBoard);
+
+   // checks for the terminal states such as win, lose, and tie and returning a value accordingly
+   if (winning(newBoard, huPlayer)) {
+      return {
+         score: -10
+      };
+   } else if (winning(newBoard, aiPlayer)) {
+      return {
+         score: 10
+      };
+   } else if (availSpots.length === 0) {
+      return {
+         score: 0
+      };
+   }
+
+   // an array to collect all the objects
+   var moves = [];
+
+   // loop through available spots
+   for (var i = 0; i < availSpots.length; i++) {
+      //create an object for each and store the index of that spot that was stored as a number in the object's index key
+      var move = {};
+      move.index = newBoard[availSpots[i]];
+
+      // set the empty spot to the current player
+      newBoard[availSpots[i]] = player;
+
+      //if collect the score resulted from calling minimax on the opponent of the current player
+      if (player == aiPlayer) {
+         var result = minimax(newBoard, huPlayer);
+         move.score = result.score;
+      } else {
+         var result = minimax(newBoard, aiPlayer);
+         move.score = result.score;
+      }
+
+      //reset the spot to empty
+      newBoard[availSpots[i]] = move.index;
+
+      // push the object to the array
+      moves.push(move);
+   }
+
+   // if it is the computer's turn loop over the moves and choose the move with the highest score
+   var bestMove;
+   if (player === aiPlayer) {
+      var bestScore = -10000;
+      for (var i = 0; i < moves.length; i++) {
+         if (moves[i].score > bestScore) {
+            bestScore = moves[i].score;
+            bestMove = i;
+         }
+      }
+   } else {
+
+      // else loop over the moves and choose the move with the lowest score
+      var bestScore = 10000;
+      for (var i = 0; i < moves.length; i++) {
+         if (moves[i].score < bestScore) {
+            bestScore = moves[i].score;
+            bestMove = i;
+         }
+      }
+   }
+
+   // return the chosen move (object) from the array to the higher depth
+   return moves[bestMove];
+}
+
+// returns the available spots on the board
+function emptyIndexies(board) {
+   return board.filter(s => s != "O" && s != "X");
+}
+
+// winning combinations using the board indexies for instace the first win could be 3 xes in a row
+function winning(board, player) {
+   if (
+      (board[0] == player && board[1] == player && board[2] == player) ||
+      (board[3] == player && board[4] == player && board[5] == player) ||
+      (board[6] == player && board[7] == player && board[8] == player) ||
+      (board[0] == player && board[3] == player && board[6] == player) ||
+      (board[1] == player && board[4] == player && board[7] == player) ||
+      (board[2] == player && board[5] == player && board[8] == player) ||
+      (board[0] == player && board[4] == player && board[8] == player) ||
+      (board[2] == player && board[4] == player && board[6] == player)
+   ) {
+      return true;
+   } else {
+      return false;
+   }
+}
