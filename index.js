@@ -74,126 +74,133 @@ let VIEW = {
 
 
 //=====================================MODIFIER================================
-const cells = document.getElementById("main-game");
-startGame();
+const MODIFIER = {
 
-function startGame() {
-	clearGame();
-	cells.addEventListener('click', turnClick, false);
-}
-
-function clearGame() {
-	DATA.boardCells = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-	VIEW.resetView();
-}
+	startGame() {
+		this.clearGame();
+		cells.addEventListener('click', MODIFIER.turnClick, false);
+	},
 
 
-function turnClick(event) {
-	console.log(event.target);
-	if (typeof DATA.boardCells[event.target.id] === 'number') {
-		turn(event.target.id, DATA.human)
-		if (!checkWin(DATA.boardCells, DATA.human) && !checkTie()) turn(bestSpot(), DATA.ai);
-	}
-}
+	clearGame() {
+		DATA.boardCells = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+		VIEW.resetView();
+	},
 
-function turn(id, player) {
-	DATA.boardCells[id] = player;
-	VIEW.placeMark(id, player);
-	let gameWon = checkWin(DATA.boardCells, player);
-	if (gameWon) gameOver(gameWon);
-}
 
-function checkWin(board, player) {
-	for (let i = 0; i < DATA.winComb.length; i++) {
-		let currArr = DATA.winComb[i];
-		if (board[currArr[0]] === player && board[currArr[1]] === player && board[currArr[2]] === player) return {
-			index: i,
-			player: player
-		};
-	}
-	return null;
-}
+	turnClick(event) {
+		if (typeof DATA.boardCells[event.target.id] === 'number') {
+			this.turn(event.target.id, DATA.human)
+			if (!this.checkWin(DATA.boardCells, DATA.human) && !this.checkTie()) this.turn(this.bestSpot(), DATA.ai);
+		}
+	},
 
-function gameOver(gameWon) {
-		cells.removeEventListener('click', turnClick, false);
-	let winner = gameWon.player === DATA.human ? "YOU WIN!" : gameWon.player === DATA.ai ? "YOU LOSE!" : "IT'S A TIE!";
-	VIEW.displayEndGame(winner);
-}
+	turn(id, player) {
+		DATA.boardCells[id] = player;
+		VIEW.placeMark(id, player);
+		let gameWon = this.checkWin(DATA.boardCells, player);
+		if (gameWon) this.gameOver(gameWon);
+	},
 
-function emptySquares() {
-	let emptyCells = []
-	for (let i = 0; i < DATA.boardCells.length; i++) {
-	   if (DATA.boardCells[i] !== DATA.ai && DATA.boardCells[i] !== DATA.human) emptyCells.push(i);
-	}
-	return emptyCells;
-}
 
-function bestSpot() {
-	return minimax(DATA.boardCells, DATA.ai).index;
-}
+	checkWin(board, player) {
+		for (let i = 0; i < DATA.winComb.length; i++) {
+			let currArr = DATA.winComb[i];
+			if (board[currArr[0]] === player && board[currArr[1]] === player && board[currArr[2]] === player) return {
+				index: i,
+				player: player
+			};
+		}
+		return null;
+	},
 
-function checkTie() {
-	if (emptySquares().length === 0) {
-		cells.removeEventListener('click', turnClick, false);
-		VIEW.displayEndGame("IT'S A TIE");
-		return true;
-	}
-	return false;
-}
+	gameOver(gameWon) {
+		cells.removeEventListener('click', MODIFIER.turnClick, false);
+		let winner = gameWon.player === DATA.human ? "YOU WIN!" : gameWon.player === DATA.ai ? "YOU LOSE!" : "IT'S A TIE!";
+		VIEW.displayEndGame(winner);
+	},
 
-function minimax(newBoard, player) {
-	var availSpots = emptySquares();
+	emptySquares() {
+		let emptyCells = []
+		for (let i = 0; i < DATA.boardCells.length; i++) {
+		   if (DATA.boardCells[i] !== DATA.ai && DATA.boardCells[i] !== DATA.human) emptyCells.push(i);
+		}
+		return emptyCells;
+	},
 
-	if (checkWin(newBoard, DATA.human)) {
-		return {
-			score: -10
-		};
-	} else if (checkWin(newBoard, DATA.ai)) {
-		return {
-			score: 10
-		};
-	} else if (availSpots.length === 0) {
-		return {
-			score: 0
-		};
-	}
-	var moves = [];
-	for (var i = 0; i < availSpots.length; i++) {
-		var move = {};
-		move.index = newBoard[availSpots[i]];
-		newBoard[availSpots[i]] = player;
+	bestSpot() {
+		return this.minimax(DATA.boardCells, DATA.ai).index;
+	},
 
-		if (player == DATA.ai) {
-			var result = minimax(newBoard, DATA.human);
-			move.score = result.score;
+	checkTie() {
+		if (this.emptySquares().length === 0) {
+			cells.removeEventListener('click', MODIFIER.turnClick, false);
+			VIEW.displayEndGame("IT'S A TIE");
+			return true;
+		}
+		return false;
+	},
+
+
+	minimax(newBoard, player) {
+		var availSpots = this.emptySquares();
+	
+		if (this.checkWin(newBoard, DATA.human)) {
+			return {
+				score: -10
+			};
+		} else if (this.checkWin(newBoard, DATA.ai)) {
+			return {
+				score: 10
+			};
+		} else if (availSpots.length === 0) {
+			return {
+				score: 0
+			};
+		}
+		var moves = [];
+		for (var i = 0; i < availSpots.length; i++) {
+			var move = {};
+			move.index = newBoard[availSpots[i]];
+			newBoard[availSpots[i]] = player;
+	
+			if (player == DATA.ai) {
+				var result = this.minimax(newBoard, DATA.human);
+				move.score = result.score;
+			} else {
+				var result = this.minimax(newBoard, DATA.ai);
+				move.score = result.score;
+			}
+	
+			newBoard[availSpots[i]] = move.index;
+	
+			moves.push(move);
+		}
+	
+		var bestMove;
+		if (player === DATA.ai) {
+			var bestScore = -10000;
+			for (var i = 0; i < moves.length; i++) {
+				if (moves[i].score > bestScore) {
+					bestScore = moves[i].score;
+					bestMove = i;
+				}
+			}
 		} else {
-			var result = minimax(newBoard, DATA.ai);
-			move.score = result.score;
-		}
-
-		newBoard[availSpots[i]] = move.index;
-
-		moves.push(move);
-	}
-
-	var bestMove;
-	if (player === DATA.ai) {
-		var bestScore = -10000;
-		for (var i = 0; i < moves.length; i++) {
-			if (moves[i].score > bestScore) {
-				bestScore = moves[i].score;
-				bestMove = i;
+			var bestScore = 10000;
+			for (var i = 0; i < moves.length; i++) {
+				if (moves[i].score < bestScore) {
+					bestScore = moves[i].score;
+					bestMove = i;
+				}
 			}
 		}
-	} else {
-		var bestScore = 10000;
-		for (var i = 0; i < moves.length; i++) {
-			if (moves[i].score < bestScore) {
-				bestScore = moves[i].score;
-				bestMove = i;
-			}
-		}
+	
+		return moves[bestMove];
 	}
-
-	return moves[bestMove];
 }
+
+
+const cells = document.getElementById("main-game");
+MODIFIER.turnClick =  MODIFIER.turnClick.bind(MODIFIER);
+MODIFIER.startGame();
