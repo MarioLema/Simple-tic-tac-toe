@@ -36,7 +36,7 @@ let DATA = {
 		[0, 4, 8],
 		[6, 4, 2]
 	],
-	hardMode: false,
+	difficultyMode: "normal",
 	humanSVG: CROSS,
 	aiSVG: CIRCLE,
 	human: "X",
@@ -46,28 +46,46 @@ let DATA = {
 
 //=====================================VIEW================================
 let VIEW = {
+
+	//PLACES THE CORRESPONDING SVG MARK IN THE TARGETED CELL
 	placeMark(target, player) {
 		let mark = player === DATA.human ? DATA.humanSVG : DATA.aiSVG;
 		document.getElementById(target).innerHTML = mark;
 	},
 
-	getTarget(index) {
-		let targetId = `local-${index + 1}`;
-		return document.getElementById(targetId);
-	},
 
+// DISPLAYS THE END GAME MESSAGE
 	displayEndGame(message) {
 		let result = document.querySelector(".result");
 		let resultMessage = document.querySelector(".result-message");
 		result.classList.add("result-active");
 		resultMessage.innerHTML = message;
 	},
+
+//RESETS THE VIEW FOR A NEW GAME
 	resetView() {
 		let result = document.querySelector(".result");
 		result.classList.remove("result-active");
 		let cells = document.querySelectorAll(".cross-circle");
 		for (let i = 0; i < cells.length; i++) {
 			cells[i].remove();
+		}
+	},
+
+	displayDifficulty(){
+		let difficulty = document.getElementById("difficulty-display");
+		difficulty.innerHTML = `PLAYING ON: ${DATA.difficultyMode} MODE`
+	},
+
+	weaponDisplay(){
+		let cross = document.getElementById("cross-icon");
+		let circle = document.getElementById("circle-icon");
+		if(DATA.human === "X"){
+			cross.classList.add("icon-active");
+			circle.classList.remove("icon-active");
+		}else{
+			cross.classList.remove("icon-active");
+			circle.classList.add("icon-active");
 		}
 	}
 };
@@ -76,33 +94,38 @@ let VIEW = {
 //=====================================MODIFIER================================
 const MODIFIER = {
 
+
+	//CHANGE THIS TO OUTSIDE CLICK EVENT
 	startGame() {
-		this.clearGame();
-		cells.addEventListener('click', MODIFIER.turnClick, false);
+		this.resetGame();
+		cells.addEventListener('click', MODIFIER.turn, false);
 	},
 
-
-	clearGame() {
+//RESETS BOARD AND CALLS THE RESETVIEW METHOD
+	resetGame() {
 		DATA.boardCells = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 		VIEW.resetView();
+		cells.addEventListener('click', MODIFIER.turn, false);
 	},
 
-
-	turnClick(event) {
+//RUNS A TURN BOTH FOR HUMAN AND AI
+	turn(event) {
 		if (typeof DATA.boardCells[event.target.id] === 'number') {
-			this.turn(event.target.id, DATA.human)
-			if (!this.checkWin(DATA.boardCells, DATA.human) && !this.checkTie()) this.turn(this.bestSpot(), DATA.ai);
+			this.playerMove(event.target.id, DATA.human)
+			if (!this.checkWin(DATA.boardCells, DATA.human) && !this.checkTie()) this.playerMove(this.aiMove(), DATA.ai);
 		}
 	},
 
-	turn(id, player) {
+
+	//PLACES A MOVE BOTH IN THE BOARD AND IN THE DOM AND CHECKS FOR A WIN
+	playerMove(id, player) {
 		DATA.boardCells[id] = player;
 		VIEW.placeMark(id, player);
-		let gameWon = this.checkWin(DATA.boardCells, player);
-		if (gameWon) this.gameOver(gameWon);
+		let winner = this.checkWin(DATA.boardCells, player);
+		if (winner) this.gameOver(winner);
 	},
 
-
+//CHECKS IF THERE IS A WINNING COMBO FOR THE PLAYER
 	checkWin(board, player) {
 		for (let i = 0; i < DATA.winComb.length; i++) {
 			let currArr = DATA.winComb[i];
@@ -114,13 +137,15 @@ const MODIFIER = {
 		return null;
 	},
 
-	gameOver(gameWon) {
-		cells.removeEventListener('click', MODIFIER.turnClick, false);
-		let winner = gameWon.player === DATA.human ? "YOU WIN!" : gameWon.player === DATA.ai ? "YOU LOSE!" : "IT'S A TIE!";
+//REMOVES THE EVENT LISTENER AND DISPLAYS THE CORRESPONDING MESSAGE
+	gameOver(winning) {
+		cells.removeEventListener('click', MODIFIER.turn, false);
+		let winner = winning.player === DATA.human ? "YOU WIN!" : winning.player === DATA.ai ? "YOU LOSE!" : "IT'S A TIE!";
 		VIEW.displayEndGame(winner);
 	},
 
-	emptySquares() {
+	//CREATES AN ARRAY WITH THE EMPTY CELLS IN THE BOARD
+	emptyCells() {
 		let emptyCells = []
 		for (let i = 0; i < DATA.boardCells.length; i++) {
 		   if (DATA.boardCells[i] !== DATA.ai && DATA.boardCells[i] !== DATA.human) emptyCells.push(i);
@@ -128,79 +153,146 @@ const MODIFIER = {
 		return emptyCells;
 	},
 
-	bestSpot() {
-		return this.minimax(DATA.boardCells, DATA.ai).index;
+
+	//SELECTS A MOVE FOR THE AI DEPENDING ON THE DIFFICULTY SET
+	aiMove() {
+		if(DATA.difficultyMode === "hard"){
+			return this.smartMove(DATA.boardCells, DATA.ai).index;
+		}else if(DATA.difficultyMode === "easy"){
+			return this.easyMove();
+		}else{
+			let toss = Math.random() * 2;
+			if(toss > 1.2){
+				return this.easyMove();
+			}else{
+				return this.smartMove(DATA.boardCells, DATA.ai).index;
+			}
+		}
+
 	},
 
+	//CHECKS IF THERE IS NO MORE CELLS AVAILABLE AND CALLS A TIE IF THERE IS
 	checkTie() {
-		if (this.emptySquares().length === 0) {
-			cells.removeEventListener('click', MODIFIER.turnClick, false);
-			VIEW.displayEndGame("IT'S A TIE");
+		if (this.emptyCells().length === 0) {
+			this.gameOver({index: -1, player: "tie"});
 			return true;
 		}
 		return false;
 	},
+//CHANGES THE GAMEMODE AT ANY TIME
+	changeGameMode(mode){
+ DATA.difficultyMode = mode;
+ VIEW.displayDifficulty();
+	},
 
+	//CHANGES THE ICON THE PLAYER PLAYS WITH
+	changeWeapon(weapon){
+		if(weapon === "circle"){
+			DATA.human = "O";
+			DATA.ai = "X";
+			DATA.humanSVG = CIRCLE;
+			DATA.aiSVG = CROSS;
+			VIEW.weaponDisplay();
+		}else{
+			DATA.human = "X";
+			DATA.ai = "O";
+			DATA.humanSVG = CROSS;
+			DATA.aiSVG = CIRCLE;
+			VIEW.weaponDisplay();
+		}
 
-	minimax(newBoard, player) {
-		var availSpots = this.emptySquares();
-	
-		if (this.checkWin(newBoard, DATA.human)) {
+	},
+
+//CHOOSES A RANDOM EMPTY CELL FOR THE MOVE
+	easyMove() {
+		let emptyCells = this.emptyCells();
+		let random = Math.floor(Math.random() * (emptyCells.length - 1));
+		return emptyCells[random];
+		// return emptyCells.length <= 0 ? null : emptyCells[random];
+	 },
+//MINMAX METHOD RESOLVES THE BEST SPOT FOR THE AI TO MOVE AND WIN
+	smartMove(board, player) {
+		let emptyCells = this.emptyCells();
+
+		//checks for a winner or a tie during recursion and adds a score depending on the winner
+		if (this.checkWin(board, DATA.human)) {
 			return {
 				score: -10
 			};
-		} else if (this.checkWin(newBoard, DATA.ai)) {
+		} else if (this.checkWin(board, DATA.ai)) {
 			return {
 				score: 10
 			};
-		} else if (availSpots.length === 0) {
+		} else if (emptyCells.length === 0) {
 			return {
 				score: 0
 			};
 		}
-		var moves = [];
-		for (var i = 0; i < availSpots.length; i++) {
-			var move = {};
-			move.index = newBoard[availSpots[i]];
-			newBoard[availSpots[i]] = player;
+		//creates an array of moves and loops over the empty cells and calls itself for all possible moves
+		let possibleMoves = [];
+		for (let i = 0; i < emptyCells.length; i++) {
+			let move = {};
+			move.index = board[emptyCells[i]];
+			board[emptyCells[i]] = player;
 	
-			if (player == DATA.ai) {
-				var result = this.minimax(newBoard, DATA.human);
+			if (player === DATA.ai) {
+				let result = this.smartMove(board, DATA.human);
 				move.score = result.score;
 			} else {
-				var result = this.minimax(newBoard, DATA.ai);
+				let result = this.smartMove(board, DATA.ai);
 				move.score = result.score;
 			}
+			//sets the local image of the board to the move so the next recursion will play the following move
+			board[emptyCells[i]] = move.index;
 	
-			newBoard[availSpots[i]] = move.index;
-	
-			moves.push(move);
+			possibleMoves.push(move);
 		}
-	
-		var bestMove;
+//loops through the moves scores and find the best one for the ai
+		let bestMove;
 		if (player === DATA.ai) {
-			var bestScore = -10000;
-			for (var i = 0; i < moves.length; i++) {
-				if (moves[i].score > bestScore) {
-					bestScore = moves[i].score;
+			let bestScore = -10000;
+			for (let i = 0; i < possibleMoves.length; i++) {
+				if (possibleMoves[i].score > bestScore) {
+					bestScore = possibleMoves[i].score;
 					bestMove = i;
 				}
 			}
 		} else {
-			var bestScore = 10000;
-			for (var i = 0; i < moves.length; i++) {
-				if (moves[i].score < bestScore) {
-					bestScore = moves[i].score;
+			let bestScore = 10000;
+			for (let i = 0; i < possibleMoves.length; i++) {
+				if (possibleMoves[i].score < bestScore) {
+					bestScore = possibleMoves[i].score;
 					bestMove = i;
 				}
 			}
 		}
 	
-		return moves[bestMove];
+		return possibleMoves[bestMove];
 	}
 }
 
 
 const cells = document.getElementById("main-game");
-MODIFIER.turnClick =  MODIFIER.turnClick.bind(MODIFIER);
+MODIFIER.turn =  MODIFIER.turn.bind(MODIFIER);
 MODIFIER.startGame();
+
+
+
+//=====================================DOM EVENTS==============================
+
+// document.getElementById("main-game").addEventListener("click", MODIFIER.startTurn.bind(MODIFIER));
+// document.getElementById("reset").addEventListener("click", MODIFIER.resetPanel.bind(MODIFIER));
+
+//CHANGE DIFFICULTY MODE
+document.getElementById("easy-mode").addEventListener("click", () => MODIFIER.changeGameMode("easy"), false);
+document.getElementById("hard-mode").addEventListener("click", () => MODIFIER.changeGameMode("hard"), false);
+document.getElementById("normal-mode").addEventListener("click", () => MODIFIER.changeGameMode("normal"), false);
+
+
+//CHANGE ICON TO PLAY WITH
+document.getElementById("cross-icon").addEventListener("click", () => MODIFIER.changeWeapon("cross"), false);
+document.getElementById("circle-icon").addEventListener("click", () => MODIFIER.changeWeapon("circle"), false);
+
+//RESET GAME
+document.getElementById("reset").addEventListener("click", MODIFIER.resetGame , false);
+//=================================================

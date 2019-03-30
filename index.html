@@ -16,7 +16,17 @@
         <h1>TIC TAC TOE</h1>
         <p>Tic-tac-toe (American English), noughts and crosses (British English) or Xs and Os, is a paper-and-pencil game for two players, X and O, who take turns marking the spaces in a 3×3 grid. The player who succeeds in placing three of their marks in a horizontal, vertical, or diagonal row wins the game. </p>
         <p>Below you can change the AI for a harder AI game or back to easier if you want</p>
-        <h3>YOU PLAY WITH X</h3>
+        <h2>CHOOSE YOUR WEAPON</h2>
+        <div class="icon-options">
+            <div class="icon-selector icon-active" id="cross-icon">
+                <img class="icon" src="icon-cross.png" alt="cross icon">
+            </div>
+            <div class="icon-selector" id="circle-icon">
+                <img class="icon" src="icon-circle.png" alt="circle icon">
+            </div>
+
+
+        </div>
     </header>
     <section>
         <div class="main-game" id="main-game">
@@ -34,9 +44,11 @@
                 <button id="reset">PLAY AGAIN!</button>
             </div>
         </div>
+        <h2 id="difficulty-display">PLAYING ON: NORMAL MODE</h2>
         <div class="game-mode-container">
-            <button class="difficulty" id="easy-mode">STUPID AI</button>
-            <button class="difficulty" id="hard-mode">SMART AI</button>
+            <button class="difficulty" id="easy-mode">REALLY EASY</button>
+            <button class="difficulty" id="normal-mode">NORMAL</button>
+            <button class="difficulty" id="hard-mode">UNBEATABLE</button>
         </div>
     </section>
 
